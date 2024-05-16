@@ -1,2 +1,2 @@
-# Discord_FitBot
+# Discord_Fitness_App
  
