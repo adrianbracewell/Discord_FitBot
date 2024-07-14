@@ -12,6 +12,8 @@
 
 discfitenv/
 
+.antiquated/
+
 *.env
 *.db
 *.txt
