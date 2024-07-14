@@ -12,7 +12,7 @@
 
 discfitenv/
 
-.antiquated/
+.discfitenv/antiquated/
 
 *.env
 *.db
