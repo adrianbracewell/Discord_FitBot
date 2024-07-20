@@ -6,11 +6,11 @@ from classes.session_exercise import SessionExercise
 from classes.fitness_program import FitnessProgram
 from datetime import datetime
 
-description_dict = {'Bro Split': 'Each major muscle group is trained once per microcycle',
-                    'Full Body': 'Major muscle groups are trained within the same workout multiples time across a microcycle',
-                    'Push-Pull-Legs': 'Workouts are divided by pushing, pulling, and lower-body-emphasis movements',
-                    'PHAT': 'Power-Hypertrophy Adaptive Training, created by Dr. Layne Norton',
-                    'German Volumne Training': 'Test'}
+description_dict = {
+    'Bro Split': 'Each major muscle group is trained once per microcycle',
+    'Full Body': 'Major muscle groups are trained within the same workout multiples time across a microcycle',
+    'Push-Pull-Legs': 'Workouts are divided by pushing, pulling, and lower-body-emphasis movements',
+}
 
 
 async def get_dropdown_value(bot, message: disnake.Message=None, return_list=False) -> str | list[str]:

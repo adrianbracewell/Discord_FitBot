@@ -5,6 +5,7 @@ from classes.fitness_program import FitnessProgram
 from classes.programmed_exercise import ProgrammedExercise
 from classes.session_exercise import SessionExercise
 from .log_set_modal import SessionLogModal
+from .edit_set_modal import EditSetModal
 
 
 workout_exercise_dict = {}
@@ -17,25 +18,9 @@ class SessionEditorListener(commands.Cog):
     @commands.Cog.listener("on_button_click")
     async def help_listener(self, inter: disnake.MessageInteraction):
         if inter.component.custom_id not in [
-            "Create Program",
-            "Edit Program",
-            "Delete Program",
-            "My Programs",
-            "Add Exercise",
-            "Edit Exercises",
-            "Remove Exercise",
-            "Edit Workouts",
-            "Update Exercise",
-            "Change Exercise Order",
-            "Replace Exercise",
-            "Start Session",
-            "Edit Session",
-            "Delete Session",
-            "My Sessions",
-            "Change Program",
             "Log Exercise Data",
-            "Mark Rest Day",
             "Complete Session",
+            "Edit Session",
         ]:
             return
 
@@ -231,6 +216,184 @@ class SessionEditorListener(commands.Cog):
             await inter.followup.send(
                 "Session marked complete!", ephemeral=True, delete_after=3
             )
+
+        elif inter.component.custom_id == "Edit Session":
+            await inter.response.defer(ephemeral=True)
+
+            program_info = util_func.get_embed_info(
+                message=inter.message,
+                embed_properties=["program_id", "workout_day", "session_id"],
+            )
+            program_id = program_info[0]
+            exercise_cycle_day = program_info[1]
+            session_id = program_info[2]
+
+            fitness_program = FitnessProgram(
+                bot=self.bot,
+                program_id=program_id,
+                exercise_cycle_day=exercise_cycle_day,
+            )
+
+            button_exercise_options = []
+            for exercise in fitness_program.exercises:
+                button = disnake.ui.Button(
+                    label=exercise.exercise_name,
+                    style=disnake.ButtonStyle.secondary,
+                    custom_id=exercise.exercise_name,
+                )
+                button_exercise_options.append(button)
+
+            embed = disnake.Embed(
+                title=f"Day {exercise_cycle_day} - Edit Session",
+                description="Which session exercise would you like to edit?",
+            )
+            embed.set_author(
+                name=f"Program ID: {program_id}\nSession ID: {session_id}"
+            )
+
+            exercise_menu = await inter.followup.send(
+                embed=embed, components=button_exercise_options, ephemeral=True
+            )
+
+            def check(m):
+                return m.channel == inter.channel
+
+            interaction: disnake.MessageInteraction = await self.bot.wait_for(
+                "button_click", check=check
+            )
+            selected_exercise = interaction.data.custom_id
+
+            await exercise_menu.delete()
+
+            for exercise in fitness_program.exercises:
+                if exercise.exercise_name == selected_exercise:
+                    exercise_obj: ProgrammedExercise = exercise
+                    break
+
+            if not exercise_obj:
+                return
+
+            exercise_id = exercise_obj.exercise_id
+            session_exercise = SessionExercise(
+                bot=self.bot,
+                session_id=session_id,
+                exercise_id=exercise_id,
+                program_id=program_id,
+                exercise_cycle_day=exercise_cycle_day,
+            )
+            session_set_info = session_exercise.session_set_info
+            session_last_set = session_exercise.current_set_count
+            session_current_set = session_last_set + 1
+
+            choices = ["Edit a Set", "Delete Set"]
+
+            dropdown = await util_func.dropdown(choices=choices)
+
+            dropdown_message = await inter.followup.send(
+                content="Choose an option:",
+                components=dropdown,
+                ephemeral=True,
+            )
+            edit_session_action = await util_func.get_dropdown_value(
+                bot=self.bot, message=dropdown_message
+            )
+            await dropdown_message.delete()
+
+            set_button_options = []
+            for session_set in list(session_set_info.keys()):
+                session_reps = session_set_info[session_set]["set_reps"]
+                session_load = session_set_info[session_set]["set_load"]
+                label = f"Set {session_set} -> {session_reps} reps @ {session_load}lbs"
+                button = disnake.ui.Button(
+                    label=label,
+                    style=disnake.ButtonStyle.secondary,
+                    custom_id=session_set,
+                )
+                set_button_options.append(button)
+
+            if edit_session_action == "Edit a Set":
+                title_action = "Edit"
+            else:
+                title_action = "Delete"
+
+            embed = disnake.Embed(
+                title=f"Day {exercise_cycle_day} - {title_action} {selected_exercise} Set",
+                description="Choose a set:",
+            )
+            embed.set_author(
+                name=f"Program ID: {program_id}\nSession ID: {session_id}"
+            )
+
+            exercise_menu = await inter.followup.send(
+                embed=embed, components=set_button_options, ephemeral=True
+            )
+
+            def check(m):
+                return m.channel == inter.channel
+
+            interaction: disnake.MessageInteraction = await self.bot.wait_for(
+                "button_click", check=check
+            )
+            selected_set = int(interaction.data.custom_id)
+
+            await exercise_menu.delete()
+
+            if edit_session_action == "Edit a Set":
+
+                await interaction.response.send_modal(
+                    EditSetModal(
+                        bot=self.bot,
+                        program_id=program_id,
+                        session_id=session_id,
+                        exercise_id=exercise_id,
+                        exercise_name=exercise_obj.exercise_name,
+                        set_count=selected_set,
+                        workout_day=exercise_cycle_day,
+                        session_load=session_set_info[selected_set]["set_load"],
+                        session_reps=session_set_info[selected_set]["set_reps"],
+                    )
+                )
+
+            elif edit_session_action == "Delete Set":
+                query = """DELETE FROM session_exercises
+                    WHERE session_id = %s
+                    AND exercise_id = %s
+                    AND set_order = %s"""
+
+                val = (
+                    session_id,
+                    exercise_id,
+                    selected_set,
+                )
+
+                self.bot.cursor.execute(query, val)
+                self.bot.db.commit()
+
+                query = """ UPDATE session_exercises
+                            SET set_order = set_order - 1
+                            WHERE session_id = %s
+                            AND exercise_id = %s
+                            AND set_order > %s"""
+
+                self.bot.cursor.execute(query, val)
+
+                self.bot.db.commit()
+
+                message, embed = await util_func.update_session_embed(
+                    inter=inter,
+                    bot=self.bot,
+                    exercise_cycle_day=exercise_cycle_day,
+                    program_id=program_id,
+                    session_id=session_id,
+                )
+
+                await message.edit(embed=embed)
+
+                await inter.followup.send(
+                    f"Set {selected_set} deleted for {selected_exercise}.",
+                    ephemeral=True,
+                    delete_after=3,
+                )
 
 
 def setup(bot):

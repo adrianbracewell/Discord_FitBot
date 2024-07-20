@@ -18,21 +18,9 @@ class SessionEditorButtons(disnake.ui.View):
         return
 
     @disnake.ui.button(
-        label="Change Session Exercise Order",
+        label="Edit Session",
         style=disnake.ButtonStyle.secondary,
-        custom_id="Change Session Exercise Order",
-    )
-    async def change_session_order(
-        self,
-        inter: disnake.ApplicationCommandInteraction,
-        button: disnake.ui.Button,
-    ):
-        return
-
-    @disnake.ui.button(
-        label="Edit Session Info",
-        style=disnake.ButtonStyle.secondary,
-        custom_id="Edit Session Info",
+        custom_id="Edit Session",
     )
     async def edit_session_info(
         self,

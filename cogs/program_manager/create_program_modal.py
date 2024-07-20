@@ -4,35 +4,7 @@ import utils.functions as util_func
 
 exercise_button_dict = {}
 
-split_list = [
-    "Bro Split",
-    "Push-Pull-Legs",
-    "Full Body",
-    "PHAT",
-    "German Volumne Training",
-    "DC Training (DoggCrapp)",
-    "PHUL Powerbuilding",
-    "FST-7 Training",
-    "Upper/Lower Split",
-    "5 x 5",
-    "Soviet Powerlifting",
-    "Auto-Regulation",
-    "Shortcut to Shred",
-    "Shortcut to Size",
-    "Shortcut to Stupidity",
-    "John Meadows Taskmaster",
-    "John Meadows Intensification",
-    "YOLO",
-    "Sure",
-    "OK",
-    "OH NO",
-    "HELP",
-    "SURPRISE",
-    "FUNNY",
-    "GHOSH",
-    "Sweet",
-    "Done",
-]
+split_list = ["Bro Split", "Push-Pull-Legs", "Full Body"]
 
 
 class CreateProgramModal(disnake.ui.Modal):
