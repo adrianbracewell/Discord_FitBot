@@ -5,6 +5,7 @@ from difflib import get_close_matches
 from classes.session_exercise import SessionExercise
 from classes.fitness_program import FitnessProgram
 from datetime import datetime
+import time
 
 description_dict = {
     'Bro Split': 'Each major muscle group is trained once per microcycle',
@@ -373,8 +374,15 @@ def display_session_workout(bot, program_id, exercise_cycle_day, session_id):
 
 def get_now_datetime_int():
     now = datetime.now()
-    now = int(now.strftime('%Y%m%d%H%M%S'))
+    now = now.strftime('%Y-%m-%d %H:%M:%S')
+    print(type(now))
     return now
+
+# def datetime_int_to_str(timestamp):
+#     time_stamp_format = '%Y-%m-%d %H:%M:%S'
+#     date_format = '%m%d%Y'
+#     dt_obj = datetime.strptime(timestamp, time_stamp_format)
+#     return 
 
 
 async def update_session_embed(bot, inter: disnake.Interaction,program_id,
@@ -395,3 +403,18 @@ async def update_session_embed(bot, inter: disnake.Interaction,program_id,
     embed.set_author(name=f'Program ID: {program_id}\nSession ID: {session_id}')
 
     return message_to_edit, embed
+
+def post_session_embed(bot, inter: disnake.Interaction,program_id,
+                               exercise_cycle_day, session_id):
+    program_name = FitnessProgram(bot=bot, program_id=program_id,
+                                  exercise_cycle_day=exercise_cycle_day).name
+
+    workout_info = display_session_workout(bot=bot,
+                                           program_id=program_id,
+                                           exercise_cycle_day=exercise_cycle_day,
+                                           session_id=session_id)
+    embed = disnake.Embed(title=f"Day {exercise_cycle_day} - {program_name} Session",
+                          description=workout_info)
+    embed.set_author(name=f'Program ID: {program_id}\nSession ID: {session_id}')
+
+    return embed

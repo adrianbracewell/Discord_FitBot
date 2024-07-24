@@ -2,6 +2,8 @@ import disnake
 from disnake.ext import commands
 import utils.functions as util_func
 from classes.fitness_program import FitnessProgram
+from classes.session import Session
+from classes.user import User
 from .session_manager_buttons import SessionManagerButtons
 from ..session_editor.session_editor_buttons import SessionEditorButtons
 
@@ -226,6 +228,52 @@ class SessionManagerListener(commands.Cog):
             embed.set_author(name=f"Program ID: {program_id}")
 
             await inter.message.edit(embed=embed)
+        elif inter.component.custom_id == "My Sessions":
+            await inter.response.defer(ephemeral=True)
+
+            program_id = util_func.get_embed_info(
+                message=inter.message, embed_properties=["program_id"]
+            )[0]
+
+            fitness_program = FitnessProgram(
+                bot=self.bot, program_id=program_id, user_id=inter.author.id
+            )
+
+            user_sessions: list[Session] = fitness_program.user_sessions
+
+            session_dict = {}
+            for session in user_sessions:
+                session_date = session.session_date
+
+                session_cycle_day = session.cycle_day
+                session_key = f"{session_date} - Day {session_cycle_day}"
+                session_dict[session_key] = session
+
+            menu_content = await util_func.dropdown(
+                choices=list(session_dict.keys()),
+            )
+            message_menu = await inter.followup.send(
+                "Which session would you like to view?",
+                components=menu_content,
+                ephemeral=True,
+            )
+            selected_session = await util_func.get_dropdown_value(
+                bot=self.bot, message=message_menu
+            )
+
+            await message_menu.delete()
+
+            session: Session = session_dict[selected_session]
+
+            embed = util_func.post_session_embed(
+                inter=inter,
+                bot=self.bot,
+                exercise_cycle_day=session.cycle_day,
+                program_id=program_id,
+                session_id=session.session_id,
+            )
+
+            await inter.followup.send(embed=embed, view=SessionEditorButtons())
 
 
 def setup(bot):

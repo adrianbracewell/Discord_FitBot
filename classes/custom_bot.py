@@ -1,11 +1,7 @@
 import mysql.connector
-from mysql.connector import cursor
-from .session_exercise import SessionExercise
-from .fitness_program import FitnessProgram
 
 import disnake
 from disnake.ext import commands
-import mysql.connector
 from dotenv import load_dotenv
 import os
 

@@ -3,10 +3,11 @@ from dataclasses import dataclass
 import mysql.connector
 from mysql.connector import cursor
 from classes.programmed_exercise import ProgrammedExercise
+from classes.session import Session
 
 
 class FitnessProgram:
-    def __init__(self, bot, program_id, exercise_cycle_day=None):
+    def __init__(self, bot, program_id, exercise_cycle_day=None, user_id=None):
         self.bot = bot
         self.program_id = program_id
         self.name = None
@@ -16,9 +17,14 @@ class FitnessProgram:
         self.program_split_type = None
         self.program_exercises = []
         self.exercise_cycle_day = exercise_cycle_day
+        self.user_id = user_id
+        self.user_sessions = []
 
         if program_id:
             self.get_program_info(program_id=program_id)
+
+        if user_id:
+            self.load_user_sessions()
 
     @property
     def exercises(self):
@@ -62,5 +68,27 @@ class FitnessProgram:
                         exercise_id=exercise[0],
                         program_id=self.program_id,
                         exercise_cycle_day=self.exercise_cycle_day,
+                    )
+                )
+
+    def load_user_sessions(self):
+        query = """
+        SELECT session_id
+        FROM sessions
+        WHERE program_id = %s
+        AND user_id = %s
+        """
+        val = (self.program_id, self.user_id)
+
+        self.bot.cursor.execute(query, val)
+        sessions_data = self.bot.cursor.fetchall()
+        if sessions_data:
+            for session in sessions_data:
+                self.user_sessions.append(
+                    Session(
+                        bot=self.bot,
+                        program_id=self.program_id,
+                        session_id=session[0],
+                        user_id=self.user_id,
                     )
                 )
